@@ -1586,7 +1586,12 @@ namespace LCD1IN8 {
     }
 
     function LCD_SetColor(Color:number, Xpoint: number, Ypoint: number, ): void {
-        LCD_WriteData_Buf(Color, Xpoint*Ypoint);
+        //LCD_WriteData_Buf(Color, Xpoint*Ypoint);
+        let XDir_Num ,YDir_Num;
+        for(XDir_Num = 0; XDir_Num < Xpoint; XDir_Num++) {
+            for(YDir_Num = 0; YDir_Num < Ypoint; YDir_Num++) {
+                LCD_SetPoint(Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel, Color);
+            }
     }
 
     function LCD_SetPoint(Xpoint:number, Ypoint:number, Color:number): void {
