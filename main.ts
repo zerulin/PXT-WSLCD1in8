@@ -1521,7 +1521,7 @@ namespace LCD1IN8 {
     //% weight=195
     export function LCD_Clear(): void{
         LCD_SetWindows(0, 0, LCD_WIDTH, LCD_HEIGHT);
-        LCD_SetColor(0xFFFF, LCD_WIDTH + 2, LCD_HEIGHT + 2);
+        LCD_SetColor(0x0000, LCD_WIDTH + 2, LCD_HEIGHT + 2);
     }
 
     //% blockId=LCD_Filling
