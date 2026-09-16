@@ -71,12 +71,18 @@ enum DRAW_FILL {
 
 //% weight=20 color=#436EEE icon="\uf108"
 namespace LCD1IN8 {
+    //Every block below is implemented in C++ (see LCD1in8.cpp).  The dummy body
+    //with a single "return" matters: PXT uses the native shim when compiling
+    //for the micro:bit, but in the browser simulator it runs this body instead.
+    //An empty body would send the simulator looking for the missing native
+    //function and abort the build (see pxt docs/simshim.md).
     //% blockId=LCD_Init
     //% blockGap=8
     //% block="LCD1IN8 Init"
     //% shim=LCD1IN8::LCD_Init
     //% weight=200
     export function LCD_Init(): void{
+        return;
     }
 
     //% blockId=LCD_Clear
@@ -85,6 +91,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::LCD_Clear
     //% weight=195
     export function LCD_Clear(): void{
+        return;
     }
 
     //% blockId=LCD_Filling
@@ -93,6 +100,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::LCD_Filling
     //% weight=195
     export function LCD_Filling(Color: COLOR): void{
+        return;
     }
 
     //% blockId=Draw_Clear
@@ -101,6 +109,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::LCD_ClearBuf
     //% weight=195
     export function LCD_ClearBuf(): void {
+        return;
     }
 
     //% blockId=LCD_Display
@@ -109,6 +118,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::LCD_Display
     //% weight=190
     export function LCD_Display(): void {
+        return;
     }
 
     //% blockId=LCD_DisplayWindows
@@ -119,6 +129,7 @@ namespace LCD1IN8 {
     //% Xend.min=1 Xend.max=160 Yend.min=1 Yend.max=128
     //% weight=189
     export function LCD_DisplayWindows(Xstart: number, Ystart: number, Xend: number, Yend: number): void {
+        return;
     }
 
     //% blockId=LCD_SetBL
@@ -128,6 +139,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::LCD_SetBL
     //% weight=180
     export function LCD_SetBL(Lev: number): void{
+        return;
     }
 
     //% blockId=Get_Color
@@ -146,6 +158,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::DrawPoint
     //% weight=150
     export function DrawPoint(Xpoint:number, Ypoint:number, Color:number, Dot_Pixel:DOT_PIXEL): void {
+        return;
     }
 
     //% blockId=DrawLine
@@ -157,6 +170,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::DrawLine
     //% weight=140
     export function DrawLine(Xstart: number, Ystart: number, Xend: number, Yend: number, Color: number, Line_width: DOT_PIXEL, Line_Style: LINE_STYLE): void {
+        return;
     }
 
     //% blockId=DrawRectangle
@@ -168,6 +182,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::DrawRectangle
     //% weight=130
     export function DrawRectangle(Xstart2: number, Ystart2: number, Xend2: number, Yend2: number, Color: number, Filled: DRAW_FILL, Dot_Pixel: DOT_PIXEL): void {
+        return;
     }
 
     //% blockId=DrawCircle
@@ -179,6 +194,7 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::DrawCircle
     //% weight=120
     export function DrawCircle(X_Center: number, Y_Center: number, Radius: number, Color: number, Draw_Fill: DRAW_FILL, Dot_Pixel: DOT_PIXEL): void {
+        return;
     }
 
     //% blockId=DisString
@@ -227,5 +243,6 @@ namespace LCD1IN8 {
 
     //% shim=LCD1IN8::DisChar_1207
     function DisChar_1207(Xchar:number, Ychar:number, Char_Offset:number, Color:number): void {
+        return;
     }
 }

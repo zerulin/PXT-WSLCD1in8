@@ -3,9 +3,10 @@
 * | Author      :   Waveshare team
 * | Function    :   Native (shim) entry points of the LCD1in8 blocks
 * | Info        :
-*   The blocks are declared in main.ts, every one of them is forwarded to the
-*   C++ driver here (V1 framework, adapted to micro:bit V2).  One shim call
-*   per block / per character, so the interpreter never walks pixels again.
+*   The blocks are declared in main.ts (the file PXT/MakeCode expects), every
+*   one of them is forwarded to the C++ driver here (V1 framework, adapted to
+*   micro:bit V2).  One shim call per block / per character, so the interpreter
+*   never walks pixels again.
 *----------------
 * | This version:   V2.1
 * | Date        :   2026-09-16

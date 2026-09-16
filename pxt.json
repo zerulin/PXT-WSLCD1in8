@@ -8,7 +8,7 @@
     },
     "files": [
         "README.md",
-        "LCD1in8.ts",
+        "main.ts",
         "LCD1in8.cpp",
         "LCD_Driver.cpp",
         "LCD_Driver.h",
