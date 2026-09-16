@@ -33,6 +33,25 @@ enum COLOR {
     GRAY = 0X8430
 }
 
+//Same colours under the V1 name: the V1 "Color" block (Get_Color) uses it, so
+//V1 programs keep compiling.
+enum LCD_COLOR {
+    WHITE = 0xFFFF,
+    BLACK = 0x0000,
+    BLUE = 0x001F,
+    BRED = 0XF81F,
+    GRED = 0XFFE0,
+    GBLUE = 0X07FF,
+    RED = 0xF800,
+    MAGENTA = 0xF81F,
+    GREEN = 0x07E0,
+    CYAN = 0x7FFF,
+    YELLOW = 0xFFE0,
+    BROWN = 0XBC40,
+    BRRED = 0XFC07,
+    GRAY = 0X8430
+}
+
 enum DOT_PIXEL{
     DOT_PIXEL_1 = 1,
     DOT_PIXEL_2,
@@ -109,6 +128,14 @@ namespace LCD1IN8 {
     //% shim=LCD1IN8::LCD_SetBL
     //% weight=180
     export function LCD_SetBL(Lev: number): void{
+    }
+
+    //% blockId=Get_Color
+    //% blockGap=8
+    //% block="%Color"
+    //% weight=185
+    export function Get_Color(Color: LCD_COLOR): number{
+        return Color;
     }
 
     //% blockId=DrawPoint

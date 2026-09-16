@@ -21,10 +21,11 @@
 #define LCD_HEIGHT  128   //LCD height
 
 //SPI clock for the LCD and the SPI SRAM.
-//The nRF52833 SPIM peripheral caps at 8 MHz (16/32 MHz only when SPIM3 is
-//allocated), so 8 MHz is the fast, fully supported value.  Raise it if your
-//module/wiring can take it.
-#define LCD_SPI_FREQUENCY   8000000
+//16 MHz needs the high speed SPIM3 peripheral; if the target allocated
+//SPIM0/1/2 instead, CODAL clamps this to 8 MHz by itself, so the value is safe
+//either way.  The 23LC1024 SRAM is rated for 20 MHz, therefore 16 MHz is also
+//the ceiling for this shared bus - do not raise it further.
+#define LCD_SPI_FREQUENCY   16000000
 
 //Biggest amount of data pushed in one SPI transfer.  The nRF52 EasyDMA window
 //(and the CODAL NRF52SPI chunking limit) is 255 bytes, everything above that
@@ -88,6 +89,7 @@ public:
 
     void LCD_Clear(uint16_t Color);
     void LCD_ClearBuf(void);
+    void LCD_FillAll(uint16_t Color);
 
     void LCD_Display(void);
     void LCD_DisplayWindows(uint16_t Xstart, uint16_t Ystart, uint16_t Xend, uint16_t Yend);

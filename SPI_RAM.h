@@ -40,6 +40,7 @@ public:
     void SPIRAM_RD_Stream(uint32_t Addr, uint8_t *pBuf, uint32_t Len);
     void SPIRAM_WR_Stream(uint32_t Addr, const uint8_t *pBuf, uint32_t Len);
     void SPIRAM_Fill(uint32_t Addr, uint32_t Len, uint8_t Data);
+    void SPIRAM_FillPattern(uint32_t Addr, uint32_t Len, uint16_t Data);
 };
 
 #endif

@@ -28,8 +28,9 @@ namespace LCD1IN8 {
 
     //%
     void LCD_Clear() {
-        lcd.LCD_Clear(LCD_COLOR_WHITE);
-        lcd.LCD_ClearBuf();
+        //LCD + frame buffer in one go (see LCD_FillAll): the next
+        //LCD_Display() then has nothing to send
+        lcd.LCD_FillAll(LCD_COLOR_WHITE);
     }
 
     //%

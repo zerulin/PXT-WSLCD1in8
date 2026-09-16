@@ -147,6 +147,36 @@ static uint32_t fb_len = 0;         //bytes waiting in fb_buf
 static uint32_t fb_next = 0;        //address of the next pixel of the open run
 static bool     fb_open = false;
 
+// ---------------------------------------------------------------------------
+//  Dirty line tracking.
+//  The ST7735 keeps its own copy of the picture, so a line that has not been
+//  drawn to since the previous LCD_Display() does not have to be read out of
+//  the SRAM and sent again.  Refreshing a mostly static screen (the usual
+//  case) then only costs the lines that really changed.
+// ---------------------------------------------------------------------------
+static uint8_t line_dirty[LCD_HEIGHT / 8];
+
+static void lines_mark_all()
+{
+    uint32_t i;
+
+    for (i = 0; i < sizeof(line_dirty); i++)
+        line_dirty[i] = 0xFF;
+}
+
+static void lines_clear(int y0, int y1)
+{
+    int y;
+
+    for (y = y0; y < y1; y++)
+        line_dirty[y >> 3] &= (uint8_t)~(1 << (y & 7));
+}
+
+static int line_is_dirty(int y)
+{
+    return line_dirty[y >> 3] & (1 << (y & 7));
+}
+
 static void fb_flush()
 {
     if (fb_len) {
@@ -189,6 +219,16 @@ void lcdbus::pixel(uint32_t Addr, uint16_t Color)
 
     fb_buf[fb_len++] = (uint8_t)(Color >> 8);
     fb_buf[fb_len++] = (uint8_t)(Color & 0xFF);
+
+    //remember that this line changed.  The 23LC1024 uses 17 address bits and a
+    //frame buffer line is LCD_WIDTH * 2 bytes long; masking the address first
+    //keeps this correct even when a coordinate runs past the end of the buffer
+    {
+        uint32_t line = (Addr & 0x1FFFF) / (LCD_WIDTH * 2);
+        if (line < LCD_HEIGHT)
+            line_dirty[line >> 3] |= (uint8_t)(1 << (line & 7));
+    }
+
     fb_next += 2;
 }
 
@@ -424,6 +464,9 @@ void LCD_Driver::LCD_Init()
     LCD_CS_WRITE(1);
     RAM_CS_WRITE(1);
 
+    //nothing has been put on the LCD yet
+    lines_mark_all();
+
     spiram.SPIRAM_SPI_Init();
     //Stream (sequential) mode: the address increments by itself, so command,
     //address and data can share one chip select phase and runs of neighbouring
@@ -475,6 +518,9 @@ function:
 ********************************************************************************/
 void LCD_Driver::LCD_Clear(uint16_t Color)
 {
+    //the LCD gets a new colour but the frame buffer does not, so the next
+    //LCD_Display() has to put the frame buffer content back on the LCD
+    lines_mark_all();
     LCD_SetWindows(0, 0, LCD_WIDTH, LCD_HEIGHT);
     //one pixel per visible position - the V1/V2 release sent (width + 2) *
     //(height + 2) pixels, i.e. 580 more than the window can hold
@@ -488,8 +534,26 @@ function:
 void LCD_Driver::LCD_ClearBuf()
 {
     lcdbus::sync();
+    lines_mark_all();
     spiram.SPIRAM_Set_Mode(SRAM_STREAM_MODE);
     spiram.SPIRAM_Fill(0, (uint32_t)LCD_WIDTH * LCD_HEIGHT * 2, 0xFF);
+}
+
+/********************************************************************************
+function:
+    Fill the LCD and the frame buffer with the same colour.  The two agree
+    afterwards, so no line has to be repainted: the V1 "Clear" sequence (fill
+    the LCD, fill the SRAM, then send the SRAM back to the LCD) paid for the
+    same picture twice.
+********************************************************************************/
+void LCD_Driver::LCD_FillAll(uint16_t Color)
+{
+    LCD_Clear(Color);                       //LCD, marks every line dirty
+
+    lcdbus::sync();
+    spiram.SPIRAM_Set_Mode(SRAM_STREAM_MODE);
+    spiram.SPIRAM_FillPattern(0, (uint32_t)LCD_WIDTH * LCD_HEIGHT * 2, Color);
+    lines_clear(0, LCD_HEIGHT);             //LCD and frame buffer agree now
 }
 
 void LCD_Driver::LCD_SetPoint(uint16_t Xpoint, uint16_t Ypoint, uint16_t Color)
@@ -504,18 +568,34 @@ function:
 void LCD_Driver::LCD_Display()
 {
     uint8_t RBUF[LCD_WIDTH * 2];    //read one line (320 bytes) at a time
-    uint16_t y;
+    int y = 0, y0, y1, yy;
 
     lcdbus::sync();
     spiram.SPIRAM_Set_Mode(SRAM_STREAM_MODE);
-    LCD_SetWindows(0, 0, LCD_WIDTH, LCD_HEIGHT);
-    for (y = 0; y < LCD_HEIGHT; y++) {
-        spiram.SPIRAM_RD_Stream((uint32_t)y * LCD_WIDTH * 2, RBUF, LCD_WIDTH * 2);
 
-        LCD_DC_WRITE(1);
-        LCD_CS_WRITE(0);
-        lcdbus::write(RBUF, LCD_WIDTH * 2);
-        LCD_CS_WRITE(1);
+    //Only the lines that changed since the previous refresh are read out of the
+    //SRAM and sent again; the ST7735 keeps displaying the lines we skip.  The
+    //window has to be set per run because the LCD address counter walks on.
+    while (y < LCD_HEIGHT) {
+        while (y < LCD_HEIGHT && !line_is_dirty(y))
+            y++;
+        y0 = y;
+        while (y < LCD_HEIGHT && line_is_dirty(y))
+            y++;
+        y1 = y;
+        if (y0 >= y1)
+            break;
+
+        LCD_SetWindows(0, y0, LCD_WIDTH, y1);
+        for (yy = y0; yy < y1; yy++) {
+            spiram.SPIRAM_RD_Stream((uint32_t)yy * LCD_WIDTH * 2, RBUF, LCD_WIDTH * 2);
+
+            LCD_DC_WRITE(1);
+            LCD_CS_WRITE(0);
+            lcdbus::write(RBUF, LCD_WIDTH * 2);
+            LCD_CS_WRITE(1);
+        }
+        lines_clear(y0, y1);
     }
 
     //Turn on the LCD display
@@ -555,6 +635,9 @@ void LCD_Driver::LCD_DisplayWindows(uint16_t Xstart, uint16_t Ystart, uint16_t X
         lcdbus::write(RBUF, pixels * 2);
         LCD_CS_WRITE(1);
     }
+
+    //this part of the screen is up to date again
+    lines_clear(Ystart, Yend);
 }
 
 /********************************************************************************
@@ -567,8 +650,10 @@ void LCD_Driver::LCD_Point(int Xpoint, int Ypoint, int Dot_Pixel, int Color)
 {
     int XDir_Num, YDir_Num;
 
-    for (XDir_Num = 0; XDir_Num < Dot_Pixel; XDir_Num++) {
-        for (YDir_Num = 0; YDir_Num < Dot_Pixel; YDir_Num++) {
+    //x runs in the inner loop: the pixels of a dot then sit at consecutive
+    //frame buffer addresses and end up in a single SPI transfer
+    for (YDir_Num = 0; YDir_Num < Dot_Pixel; YDir_Num++) {
+        for (XDir_Num = 0; XDir_Num < Dot_Pixel; XDir_Num++) {
             LCD_SetPoint(Xpoint + XDir_Num - Dot_Pixel, Ypoint + YDir_Num - Dot_Pixel, Color);
         }
     }

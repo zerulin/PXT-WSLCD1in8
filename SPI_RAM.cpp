@@ -155,3 +155,35 @@ void SPIRAM::SPIRAM_Fill(uint32_t Addr, uint32_t Len, uint8_t Data)
     }
     lcdbus::cs_ram(1);
 }
+
+/*
+ * Fill with a repeating 16 bit pattern (one frame buffer pixel).  Both the
+ * block and the transfer sizes are even, so the pattern stays aligned.
+ */
+void SPIRAM::SPIRAM_FillPattern(uint32_t Addr, uint32_t Len, uint16_t Data)
+{
+    uint8_t cmd[4];
+    uint8_t block[SPI_BLOCK_MAX];
+    uint32_t i;
+
+    for (i = 0; i < SPI_BLOCK_MAX / 2; i++) {
+        block[i * 2] = (uint8_t)(Data >> 8);
+        block[i * 2 + 1] = (uint8_t)(Data & 0xFF);
+    }
+
+    cmd[0] = SRAM_CMD_WRITE;
+    cmd[1] = (uint8_t)(Addr >> 16);
+    cmd[2] = (uint8_t)(Addr >> 8);
+    cmd[3] = (uint8_t)(Addr);
+
+    lcdbus::init();
+    lcdbus::sync();
+    lcdbus::cs_ram(0);
+    lcdbus::write(cmd, 4);
+    while (Len) {
+        uint32_t n = (Len > SPI_BLOCK_MAX) ? SPI_BLOCK_MAX : Len;
+        lcdbus::write(block, n);
+        Len -= n;
+    }
+    lcdbus::cs_ram(1);
+}
